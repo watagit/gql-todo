@@ -1,34 +1,26 @@
+import { PrismaClient } from '@prisma/client';
 import { ApolloServer } from 'apollo-server';
 import fs from 'fs';
+import { argsToArgsConfig } from 'graphql/type/definition';
 import path from 'path';
+import { Todo } from './types';
 
-type Todo = {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-};
-
-let todos: Todo[] = [{
-  id: 'todo-0',
-  title: 'clean up my room',
-  isCompleted: false,
-}];
-
-let idCount = todos.length;
 const resolvers = {
   Query: {
     info: () => `This is the API of a Hackernews Clone`,
-    todos: () => todos,
+    todos: async (parent: any, args: any, context: any) => {
+      return context.prisma.todo.findMany();
+    },
   },
   Mutation: {
-    postTodo: (parent: any, args: any) => {
-      const todo = {
-        id: `todo-${idCount}`,
-        title: args.title,
-        isCompleted: false,
-      } as Todo
-      todos.push(todo);
-      return todo;
+    postTodo: (parent: any, args: any, context: any) => {
+      const newTodo = context.prisma.todo.create({
+        data: {
+          title: args.title,
+          isCompleted: false,
+        } as Todo,
+      });
+      return newTodo;
     },
   },
   Todo: {
@@ -38,12 +30,17 @@ const resolvers = {
   }
 };
 
+const prisma = new PrismaClient();
+
 const server = new ApolloServer({
   typeDefs: fs.readFileSync(
     path.join(__dirname, 'schema.graphql'),
     'utf8',
   ),
   resolvers,
+  context: {
+    prisma,
+  },
 });
 
 server
