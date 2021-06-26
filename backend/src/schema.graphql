@@ -1,0 +1,14 @@
+type Query {
+  info: String!
+  todos: [Todo!]!
+}
+
+type Mutation {
+  postTodo(title: String!): Todo!
+}
+
+type Todo {
+  id: ID!
+  title: String!
+  isCompleted: Boolean!
+}
